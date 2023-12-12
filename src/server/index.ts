@@ -1,46 +1,55 @@
-import express, { Request, Response, NextFunction, Express } from 'express';
-import * as path from 'path';
+import express, { Express, NextFunction, Request, Response } from 'express';
 import * as fs from 'fs';
+import * as path from 'path';
+
 import { PORT } from './config';
 
-const app = express();
 const publicDir = path.join(__dirname, '../../public');
-const routePath = path.join(__dirname, 'routes');
-
-app.use(express.static(publicDir));
-
-app.get('/', (req: Request, res: Response, next: NextFunction): void => {
-	try {
-		res.sendFile('index.html');
-	} catch (error) {
-		next(error);
-	}
-});
+const routeDir = path.join(__dirname, 'routes');
 
 const loadRoutes = async (routesPath: string, app: Express) => {
-	fs.readdirSync(routesPath).forEach(async fileName => {
-		const filepath = routesPath + '/' + fileName;
+	const dirContent = fs.readdirSync(routesPath);
+	for (const dirElem of dirContent) {
+		const filepath = routesPath + '/' + dirElem;
 		const file = path.parse(filepath);
-		fs.stat(filepath, async (_, stat) => {
-			if (stat.isDirectory()) {
-				loadRoutes(filepath, app);
-			} else if (file.ext === '.js') {
-				try {
-					console.info(`Loading module: ${path.join(file.dir, file.name)}`);
-					const route = `/api/${path.relative(routePath, file.dir)}`;
-					const router = (await import(filepath)).default;
-					console.log(`Mapping router from module: ${file.name} to route: ${route}`);
-					app.use(route, router);
-				} catch (ex) {
-					console.error('Failed loading router');
-					console.error(ex);
-				}
+		const stat = fs.statSync(filepath);
+		if (stat.isDirectory()) {
+			await loadRoutes(filepath, app);
+		} else if (file.ext === '.js') {
+			try {
+				const relativePath = path.relative(routeDir, file.dir);
+				const baseRoute = relativePath !== '' ? `/api/${relativePath}` : '/api';
+				const router = (await import(filepath)).default;
+				console.log(`Mapping router from module: ${file.name} with base route: ${baseRoute}`);
+				app.use(baseRoute, router);
+			} catch (ex) {
+				console.error('Failed loading router');
+				console.error(ex);
 			}
-		});
+		}
+	}
+};
+
+const setupExpressApp = async (app: Express) => {
+	app.use(express.static(publicDir));
+
+	console.log('Loading routes');
+	await loadRoutes(routeDir, app);
+	console.log('Routes loaded');
+
+	//return react for all not defined routes app
+	app.get('*', (req: Request, res: Response, next: NextFunction): void => {
+		try {
+			res.sendFile(path.join(publicDir, 'app.html'));
+		} catch (ex) {
+			console.error(ex);
+			next(ex);
+		}
+	});
+
+	app.listen(PORT, () => {
+		console.log(`App listening on port ${PORT}`);
 	});
 };
-loadRoutes(routePath, app);
 
-app.listen(PORT, () => {
-	console.log(`App listening on port ${PORT}`);
-});
+setupExpressApp(express());
