@@ -37,6 +37,10 @@ const setupExpressApp = async (app: Express) => {
 	await loadRoutes(routeDir, app);
 	console.log('Routes loaded');
 
+	app.get('/api/*', (req: Request, res: Response): void => {
+		res.sendStatus(404);
+	});
+
 	//return react for all not defined routes app
 	app.get('*', (req: Request, res: Response, next: NextFunction): void => {
 		try {
