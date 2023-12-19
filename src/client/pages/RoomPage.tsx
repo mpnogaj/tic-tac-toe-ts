@@ -27,6 +27,7 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 			gameStarted: true
 		};
 		//this.socket = io();
+
 		this.aliveIntervalId = undefined;
 	}
 
