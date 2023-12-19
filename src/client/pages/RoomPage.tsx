@@ -1,5 +1,6 @@
 import React from 'react';
 
+import GameComponent from '../components/GameComponent';
 //import { io } from 'socket.io-client';
 import {
 	ParamsComponent,
@@ -23,7 +24,7 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 	constructor(props: ParamsComponentProps<empty, RoomPageParams>) {
 		super(props);
 		this.state = {
-			gameStarted: false
+			gameStarted: true
 		};
 		//this.socket = io();
 		this.aliveIntervalId = undefined;
@@ -51,6 +52,7 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 			return (
 				<div>
 					<h1>Game started</h1>
+					<GameComponent />
 				</div>
 			);
 		} else {
