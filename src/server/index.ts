@@ -4,6 +4,7 @@ import * as path from 'path';
 import bodyParser from 'body-parser';
 
 import { PORT } from './config';
+import cookieParser from 'cookie-parser';
 
 const publicDir = path.join(__dirname, '../../public');
 const routeDir = path.join(__dirname, 'routes');
@@ -36,6 +37,9 @@ const setupExpressApp = async (app: Express) => {
 
 	var jsonParser = bodyParser.json();
 	app.use(jsonParser);
+
+	app.disable('etag');
+	app.use(cookieParser());
 
 	console.log('Loading routes');
 	await loadRoutes(routeDir, app);
