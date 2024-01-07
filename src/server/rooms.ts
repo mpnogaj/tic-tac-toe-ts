@@ -1,5 +1,5 @@
 import Room from '../common/types/dto/room';
 
-var RoomsList: Room[] = [];
+var RoomList: Room[] = [];
 
-export default RoomsList;
+export default RoomList;

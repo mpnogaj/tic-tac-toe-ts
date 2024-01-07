@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import RoomsList from '../../rooms';
+import RoomList from '../../rooms';
 
 const router = Router();
 router.get('/fetch', (req, res) => {
-	res.send(RoomsList);
+	res.send(RoomList);
 });
 
 export = router;

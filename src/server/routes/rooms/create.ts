@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import Room from '../../../common/types/dto/room';
 import Player from '../../../common/types/dto/player';
-import RoomsList from '../../rooms';
+import RoomList from '../../rooms';
 import crypto from "crypto"
 
 const router = Router();
@@ -13,7 +13,7 @@ router.post('/create', (req, res) => {
 		maxPlayerCount: 2,
 		players: []
 	};
-	RoomsList.push(newRoom);
+	RoomList.push(newRoom);
 	res.send(newRoom);
 });
 
