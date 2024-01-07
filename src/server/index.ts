@@ -1,6 +1,7 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import bodyParser from 'body-parser';
 
 import { PORT } from './config';
 
@@ -32,6 +33,9 @@ const loadRoutes = async (routesPath: string, app: Express) => {
 
 const setupExpressApp = async (app: Express) => {
 	app.use(express.static(publicDir));
+
+	var jsonParser = bodyParser.json();
+	app.use(jsonParser);
 
 	console.log('Loading routes');
 	await loadRoutes(routeDir, app);
