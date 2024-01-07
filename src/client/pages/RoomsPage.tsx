@@ -72,9 +72,9 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 		};
 
 		try {
-			//const resp = await axios.post<Room>(Endpoints.Rooms.CREATE_ROOM, room);
-			//const newRoom = resp.data;
-			this.joinRoom('111');
+			const resp = await axios.post<Room>(Endpoints.Rooms.CREATE_ROOM, room);
+			const newRoom = resp.data;
+			this.joinRoom(newRoom.guid);
 		} catch (err) {
 			alert("Error. Couldn't create room. Check console for details");
 			console.error(err);
