@@ -6,7 +6,7 @@ enum Tile {
 	Cross
 }
 
-export class TicTacToe {
+class TicTacToe {
 	private readonly N: number = 3;
 	private _moves: number = 0;
 	public GameStarted: boolean = false;
@@ -125,10 +125,13 @@ export class TicTacToe {
 		let result: string = '';
 		for (let i = 0; i < this.N; i++) {
 			for (let j = 0; j < this.N; j++) {
-				const chr = this._board[i][j] === Tile.Empty ? '0' : this._board[i][j] === Tile.Circle ? '1' : '2';
+				const chr =
+					this._board[i][j] === Tile.Empty ? '0' : this._board[i][j] === Tile.Circle ? '1' : '2';
 				result += chr;
 			}
 		}
 		return result;
 	}
 }
+
+export default TicTacToe;

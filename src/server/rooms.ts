@@ -1,5 +1,6 @@
 import Room from '../common/types/dto/room';
+import TicTacToe from '../common/types/tictactoe';
 
-var RoomList: Room[] = [];
+export const RoomList: Room[] = [];
 
-export default RoomList;
+export const Games = new Map<Room, TicTacToe>();

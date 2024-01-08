@@ -25,7 +25,7 @@ const loadRoutes = async (routesPath: string, app: Express) => {
 				const relativePath = path.relative(routeDir, file.dir);
 				const baseRoute = relativePath !== '' ? `/api/${relativePath}` : '/api';
 				const router = (await import(filepath)).default;
-				console.log(`Mapping router from module: ${file.name} with base route: ${baseRoute}`);
+				console.log(`Mapping router from module: ${file.name}, with base route: ${baseRoute}`);
 				app.use(baseRoute, router);
 			} catch (ex) {
 				console.error('Failed loading router');

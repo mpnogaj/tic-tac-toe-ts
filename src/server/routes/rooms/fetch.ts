@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import RoomList from '../../rooms';
+
+import { RoomList } from '../../rooms';
 
 const router = Router();
 router.get('/fetch', (req, res) => {

@@ -1,15 +1,14 @@
+import crypto from 'crypto';
 import { Router } from 'express';
+
 import Room from '../../../common/types/dto/room';
-import Player from '../../../common/types/dto/player';
-import RoomList from '../../rooms';
-import crypto from "crypto"
+import { RoomList } from '../../rooms';
 
 const router = Router();
 router.post('/create', (req, res) => {
-	var newRoom: Room = {
+	const newRoom: Room = {
 		guid: crypto.randomUUID(),
 		roomName: (req.body as Room).roomName,
-		playerCount: 0,
 		maxPlayerCount: 2,
 		players: []
 	};

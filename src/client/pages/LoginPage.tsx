@@ -24,7 +24,7 @@ class LoginPage extends NavComponent<empty, ILoginPageState> {
 			nickname: this.state.nickname
 		};
 
-		await axios.post(Endpoints.Player, data);
+		await axios.post(Endpoints.Login, data);
 
 		this.props.navigate('/rooms');
 	};

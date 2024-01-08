@@ -31,7 +31,7 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 
 		try {
 			this.setState({ isRefreshing: true });
-			const resp = await axios.get<Array<Room>>(Endpoints.Rooms);
+			const resp = await axios.get<Array<Room>>(Endpoints.FetchRooms);
 			this.setState({ rooms: resp.data, isRefreshing: false });
 		} catch (error) {
 			console.error(error);
@@ -51,7 +51,7 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 		};
 
 		try {
-			const resp = await axios.post<Room>(Endpoints.Rooms, room);
+			const resp = await axios.post<Room>(Endpoints.CreateRoom, room);
 			const newRoom = resp.data;
 			console.log(newRoom);
 			this.props.navigate(`/room/${newRoom.guid}`);
@@ -63,7 +63,8 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 
 	joinRoom = async (roomGuid: string) => {
 		try {
-			await axios.post(`${Endpoints.Rooms}/${roomGuid}`);
+			//???
+			//await axios.post(`${Endpoints.Rooms}/${roomGuid}`);
 			this.props.navigate(`/room/${roomGuid}`);
 		} catch (err) {
 			console.error(err);
