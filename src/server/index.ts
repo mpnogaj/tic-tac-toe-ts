@@ -1,6 +1,8 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
 import * as fs from 'fs';
+import { Server, createServer } from 'http';
 import * as path from 'path';
+import { Socket } from 'socket.io';
 
 import { PORT } from './config';
 
@@ -31,6 +33,9 @@ const loadRoutes = async (routesPath: string, app: Express) => {
 };
 
 const setupExpressApp = async (app: Express) => {
+	const server = createServer(app);
+	const io = new Server(server);
+
 	app.use(express.static(publicDir));
 
 	console.log('Loading routes');

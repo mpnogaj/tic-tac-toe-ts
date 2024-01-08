@@ -1,54 +1,54 @@
+import axios from 'axios';
 import React from 'react';
 
+import Player from '../../common/types/dto/player';
+import { NavComponent, NavComponentProps, navHOC } from '../components/hoc/NavComponent';
+import Endpoints from '../endpoints';
 import { empty } from '../types/other';
 
 interface ILoginPageState {
-	username: string;
-	password: string;
-	nick: string;
+	nickname: string;
 }
 
-class LoginPage extends React.Component<empty, ILoginPageState> {
-	constructor(props: empty) {
+class LoginPage extends NavComponent<empty, ILoginPageState> {
+	constructor(props: NavComponentProps<empty>) {
 		super(props);
 		this.state = {
-			username: '',
-			password: '',
-			nick: ''
+			nickname: ''
 		};
 	}
+
+	playClickedHandler = async () => {
+		const data: Player = {
+			guid: '00000000-0000-0000-0000-000000000000',
+			nickname: this.state.nickname
+		};
+
+		await axios.post(Endpoints.Player, data);
+
+		this.props.navigate('/rooms');
+	};
 
 	render(): React.ReactNode {
 		return (
 			<div>
-				<h1>Login ...</h1>
+				<h1>Tic Tac Toe</h1>
 				<div>
-					<label>Login: </label>
-					<input type="text" value={this.state.username} />
+					<label>Nickname: </label>
+					<input
+						type="text"
+						value={this.state.nickname}
+						onInput={e => {
+							this.setState({ nickname: e.currentTarget.value });
+						}}
+					/>
 				</div>
 				<div>
-					<label>Password: </label>
-					<input type="password" value={this.state.password} />
-				</div>
-				<div>
-					<a>Login</a>
-				</div>
-				<div>
-					<span>
-						Don't have an account? <a href="/register">Register</a>
-					</span>
-				</div>
-				<h1>... or play anonymously</h1>
-				<div>
-					<label>Nick: </label>
-					<input type="text" value={this.state.nick} />
-				</div>
-				<div>
-					<a>Play</a>
+					<a onClick={async () => await this.playClickedHandler()}>Play</a>
 				</div>
 			</div>
 		);
 	}
 }
 
-export default LoginPage;
+export default navHOC(LoginPage);
