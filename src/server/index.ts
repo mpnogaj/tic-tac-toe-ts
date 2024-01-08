@@ -1,10 +1,13 @@
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import * as fs from 'fs';
-import { Server, createServer } from 'http';
+import http from 'http';
 import * as path from 'path';
-import { Socket } from 'socket.io';
+import { Server } from 'socket.io';
 
 import { PORT } from './config';
+import { handleConn } from './socket';
 
 const publicDir = path.join(__dirname, '../../public');
 const routeDir = path.join(__dirname, 'routes');
@@ -33,14 +36,21 @@ const loadRoutes = async (routesPath: string, app: Express) => {
 };
 
 const setupExpressApp = async (app: Express) => {
-	const server = createServer(app);
-	const io = new Server(server);
-
 	app.use(express.static(publicDir));
+
+	const jsonParser = bodyParser.json();
+	app.use(jsonParser);
+
+	app.disable('etag');
+	app.use(cookieParser());
 
 	console.log('Loading routes');
 	await loadRoutes(routeDir, app);
 	console.log('Routes loaded');
+
+	app.get('/api/*', (req: Request, res: Response): void => {
+		res.sendStatus(404);
+	});
 
 	//return react for all not defined routes app
 	app.get('*', (req: Request, res: Response, next: NextFunction): void => {
@@ -52,9 +62,14 @@ const setupExpressApp = async (app: Express) => {
 		}
 	});
 
-	app.listen(PORT, () => {
+	const server = http.createServer(app);
+	const io = new Server(server);
+
+	server.listen(PORT, () => {
 		console.log(`App listening on port ${PORT}`);
 	});
+
+	io.on('connection', handleConn);
 };
 
 setupExpressApp(express());
