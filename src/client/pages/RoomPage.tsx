@@ -1,7 +1,7 @@
 import React from 'react';
 
 import GameComponent from '../components/GameComponent';
-//import { io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import {
 	ParamsComponent,
 	ParamsComponentProps,
@@ -18,7 +18,7 @@ type RoomPageParams = {
 };
 
 class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
-	//readonly socket;
+	readonly socket;
 	aliveIntervalId: ReturnType<typeof setInterval> | undefined;
 
 	constructor(props: ParamsComponentProps<empty, RoomPageParams>) {
@@ -26,13 +26,13 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 		this.state = {
 			gameStarted: true
 		};
-		//this.socket = io();
+		this.socket = io('http://localhost:3000');
 
 		this.aliveIntervalId = undefined;
 	}
 
 	componentDidMount(): void {
-		//this.socket.emit('join', this.props.params.roomGuid);
+		this.socket.emit('join', this.props.params.roomGuid);
 
 		//send alive signal to server
 		this.aliveIntervalId = setInterval(() => {
@@ -45,7 +45,7 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 		if (this.aliveIntervalId !== undefined) {
 			clearInterval(this.aliveIntervalId);
 		}
-		//this.socket.emit('leave', this.props.params.roomGuid);
+		this.socket.emit('leave', this.props.params.roomGuid);
 	}
 
 	render(): React.ReactNode {

@@ -1,10 +1,13 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
+import http from 'http'
 import * as fs from 'fs';
 import * as path from 'path';
 import bodyParser from 'body-parser';
 
 import { PORT } from './config';
 import cookieParser from 'cookie-parser';
+import { Server } from 'socket.io';
+import { handleConn } from './socket';
 
 const publicDir = path.join(__dirname, '../../public');
 const routeDir = path.join(__dirname, 'routes');
@@ -59,9 +62,14 @@ const setupExpressApp = async (app: Express) => {
 		}
 	});
 
-	app.listen(PORT, () => {
+	const server = http.createServer(app);
+	const io = new Server(server);
+
+	server.listen(PORT, () => {
 		console.log(`App listening on port ${PORT}`);
 	});
+
+	io.on('connection', handleConn);
 };
 
 setupExpressApp(express());
