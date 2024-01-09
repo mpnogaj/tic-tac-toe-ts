@@ -49,13 +49,14 @@ class TicTacToe {
 		return this._board[i][j] === Tile.Empty;
 	}
 
-	public MakeMove(i: number, j: number, player: Player): void {
-		if (!this.CanMakeMove(i, j, player)) return;
+	public MakeMove(i: number, j: number, player: Player): boolean {
+		if (!this.CanMakeMove(i, j, player)) return false;
 		this._board[i][j] = this._shapesDict.get(player)!;
 		this._moves++;
 		this.CheckWinner(i, j, player);
 
 		[this.CurrentTurn, this._nextTurn] = [this._nextTurn, this.CurrentTurn];
+		return true;
 	}
 
 	public Surrender(player: Player): void {
