@@ -2,10 +2,10 @@ import axios from 'axios';
 import React from 'react';
 
 import Room from '../../common/types/dto/room';
+import { empty } from '../../common/types/other';
 import RoomComponent from '../components/RoomComponent';
 import { NavComponent, NavComponentProps, navHOC } from '../components/hoc/NavComponent';
 import Endpoints from '../endpoints';
-import { empty } from '../types/other';
 
 interface ILoginPageState {
 	isRefreshing: boolean;

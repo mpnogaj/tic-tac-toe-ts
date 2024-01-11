@@ -1,10 +1,10 @@
 import axios from 'axios';
 import React from 'react';
 
+import { empty } from '../../common//types/other';
 import Player from '../../common/types/dto/player';
 import { NavComponent, NavComponentProps, navHOC } from '../components/hoc/NavComponent';
 import Endpoints from '../endpoints';
-import { empty } from '../types/other';
 
 interface ILoginPageState {
 	nickname: string;

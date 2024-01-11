@@ -1,16 +1,17 @@
-//import { HubConnection } from '@microsoft/signalr';
 import React from 'react';
+import { Socket } from 'socket.io-client';
 
 import Player from '../../common/types/dto/player';
 
 type GameComponentProps = {
 	startingPlayer: Player;
-	//socket: HubConnection;
+	socket: Socket;
+	roomGuid: string;
 };
 
 type GameComponentState = {
 	playerTurn: Player;
-	board: string[];
+	board: ('⬛' | '⭕' | '❌' | undefined)[];
 	gameFinished: boolean;
 	winner: string | null | undefined;
 };
@@ -26,7 +27,7 @@ class GameComponent extends React.Component<GameComponentProps, GameComponentSta
 			winner: undefined
 		};
 
-		/*this.props.socket.on('UpdateBoardState', (board: string, player: Player) => {
+		this.props.socket.on('UpdateBoardState', (board: string, player: Player) => {
 			const newBoard = board.split('').map(x => {
 				switch (x) {
 					case '0':
@@ -38,15 +39,14 @@ class GameComponent extends React.Component<GameComponentProps, GameComponentSta
 				}
 			});
 			this.setState({ playerTurn: player, board: newBoard });
-		});*/
-		/*this.props.socket.on('NotifyGameFinished', (winner: string | null) => {
+		});
+		this.props.socket.on('NotifyGameFinished', (winner: string | null) => {
 			this.setState({ ...this.state, gameFinished: true, winner: winner });
-		});*/
+		});
 	}
 
 	makeMove = async (i: number, j: number) => {
-		console.log(`${i}, ${j}`);
-		//await this.props.socket.invoke('MakeMove', i, j);
+		this.props.socket.emit('makeMove', i, j, this.props.roomGuid);
 	};
 
 	render(): React.ReactNode {
@@ -98,7 +98,7 @@ type GameTileProps = {
 	i: number;
 	j: number;
 	tileClickCallback: (i: number, j: number) => void;
-	value: string;
+	value: '⬛' | '⭕' | '❌' | undefined;
 };
 
 const GameTile = (props: GameTileProps) => {

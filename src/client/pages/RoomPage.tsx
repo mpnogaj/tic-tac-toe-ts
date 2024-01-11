@@ -1,25 +1,23 @@
-//import * as signalR from '@microsoft/signalr';
-//import { HubConnection, HubConnectionState } from '@microsoft/signalr';
-//import axios from 'axios';
+import axios from 'axios';
 import React from 'react';
+import { io } from 'socket.io-client';
 
 import Player from '../../common/types/dto/player';
-//import Room from '../../common/types/dto/room';
+import Room from '../../common/types/dto/room';
+import { empty } from '../../common/types/other';
 import GameComponent from '../components/GameComponent';
 import {
 	ParamsComponent,
 	ParamsComponentProps,
 	paramsHOC
 } from '../components/hoc/ParamsComponent';
-//import Endpoints from '../endpoints';
-import { empty } from '../types/other';
+import Endpoints from '../endpoints';
 
 type RoomPageState = {
 	isLoading: boolean;
 	connectionClosed: boolean;
 	error: string | undefined;
 	gameStarted: boolean;
-	playersReady: Map<string, boolean>;
 	players: Map<string, Player>;
 };
 
@@ -28,10 +26,8 @@ type RoomPageParams = {
 };
 
 class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
-	//connection: HubConnection;
-
 	startingPlayer: Player | undefined;
-
+	socket: ReturnType<typeof io>;
 	constructor(props: ParamsComponentProps<empty, RoomPageParams>) {
 		super(props);
 		this.state = {
@@ -39,82 +35,75 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 			connectionClosed: false,
 			error: undefined,
 			gameStarted: false,
-			playersReady: new Map<string, boolean>(),
 			players: new Map<string, Player>()
 		};
 
 		this.startingPlayer = undefined;
-		/*this.connection = new signalR.HubConnectionBuilder()
-			.withUrl(`${Base}/game?room=${props.params.roomGuid}`)
-			.build();
 
-		this.connection.on('NotifyToggleReady', (guid: string, ready: boolean) => {
-			this.setState({
-				...this.state,
-				playersReady: new Map(this.state.playersReady.set(guid, ready))
-			});
+		this.socket = io({
+			autoConnect: false
 		});
-		this.connection.on('NotifyGameStarted', (player: Player) => {
-			this.startingPlayer = player;
-			this.setState({ ...this.state, gameStarted: true });
-		});
-		this.connection.on('NotifyPlayerJoined', (player: Player) => {
+
+		this.socket.on('NotifyPlayerJoined', (player: Player) => {
 			this.setState({
 				...this.state,
 				players: new Map(this.state.players.set(player.guid, player))
 			});
 		});
-		this.connection.onclose(() => {
-			this.setState({ connectionClosed: true });
-		});
-		this.connection.on('NotifyPlayerLeft', playerGuid => {
+		this.socket.on('NotifyPlayerLeft', (playerGuid: string) => {
 			if (this.state.gameStarted) return;
 			this.state.players.delete(playerGuid);
-			this.state.playersReady.delete(playerGuid);
-
 			this.setState({
 				...this.state,
-				players: new Map(this.state.players),
-				playersReady: new Map(this.state.playersReady)
+				players: new Map(this.state.players)
 			});
-		});*/
+		});
+		this.socket.on('NotifyGameStarted', (startingPlayer: Player) => {
+			console.log(startingPlayer);
+			this.startingPlayer = startingPlayer;
+			this.setState({
+				...this.state,
+				gameStarted: true
+			});
+		});
+		this.socket.on('disconnect', () => {
+			this.setState({ ...this.state, connectionClosed: true });
+		});
 	}
 
 	async componentDidMount(): Promise<void> {
-		/*if (this.connection.state === HubConnectionState.Disconnected) {
+		if (this.socket.disconnected) {
 			try {
-				const res = await this.connection.start();
-
-				console.log(res);
-
-				const resp = await axios.get<Room>(`${Endpoints.Rooms}/${this.props.params.roomGuid}`);
+				this.socket.connect();
+				this.socket.emit('join', this.props.params.roomGuid);
+				const resp = await axios.get<Room>(`${Endpoints.FetchRooms}`, {
+					params: { guid: this.props.params.roomGuid }
+				});
 				const room = resp.data;
 				const playersMap = new Map(room.players.map(x => [x.guid, x]));
-
-				const readyMap = new Map(
-					Object.keys(room.readyDict).map(key => {
-						return [key, room.readyDict[key]];
-					})
-				);
 
 				this.setState({
 					...this.state,
 					isLoading: false,
 					error: undefined,
-					players: playersMap,
-					playersReady: readyMap
+					players: playersMap
 				});
 			} catch (err) {
-				this.setState({ ...this.state, isLoading: false, error: err });
+				let errMsg = '';
+				if (err instanceof Error) {
+					errMsg = err.message;
+				} else {
+					errMsg = 'Unknown error';
+				}
+				this.setState({ ...this.state, isLoading: false, error: errMsg });
 			}
-		}*/
+		}
 	}
 
 	componentWillUnmount(): void {
-		/*if (this.connection.state === HubConnectionState.Connected) {
-			//fire and forget
-			this.connection.stop().then().catch();
-		}*/
+		if (this.socket.connected) {
+			this.socket.disconnect();
+		}
 	}
 
 	render(): React.ReactNode {
@@ -145,35 +134,26 @@ class RoomPage extends ParamsComponent<empty, RoomPageParams, RoomPageState> {
 			return (
 				<div>
 					<h1>Game started</h1>
-					<GameComponent startingPlayer={this.startingPlayer} />
+					<GameComponent
+						startingPlayer={this.startingPlayer}
+						socket={this.socket}
+						roomGuid={this.props.params.roomGuid!}
+					/>
 				</div>
 			);
 		} else {
 			return (
 				<div>
 					<h1>Room: {this.props.params.roomGuid}</h1>
+					<h2>Waiting for players to join</h2>
 					<h2>Players:</h2>
 					<div>
 						<ul>
 							{Array.from(this.state.players.values()).map(player => {
-								const isReady = this.state.playersReady.get(player.guid) ?? false;
-								return (
-									<li key={player.guid}>
-										{player.nickname} - {isReady ? 'Ready' : 'Not ready'}
-									</li>
-								);
+								return <li key={player.guid}>{player.nickname}</li>;
 							})}
 						</ul>
 					</div>
-
-					<a
-						onClick={async () => {
-							//await this.connection.invoke('ToggleReady');
-							console.log('toggle ready');
-						}}
-					>
-						Toggle ready
-					</a>
 				</div>
 			);
 		}
