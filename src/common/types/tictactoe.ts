@@ -61,7 +61,7 @@ class TicTacToe {
 
 	public Surrender(player: Player): void {
 		this.GameFinished = true;
-		this.Winner = player === this.CurrentTurn ? this._nextTurn : this.CurrentTurn;
+		this.Winner = player.guid === this.CurrentTurn.guid ? this._nextTurn : this.CurrentTurn;
 	}
 
 	private CheckWinner(i: number, j: number, player: Player): void {

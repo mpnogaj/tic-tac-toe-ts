@@ -14,15 +14,15 @@ function getPlayer(socket: Socket): Player {
 }
 
 function containsPlayer(room: Room, player: Player): boolean {
-	if (room.players.find(p => p == player)) return true;
+	if (room.players.find(p => p.guid == player.guid)) return true;
 	return false;
 }
 
 function setupSockets(io: Server) {
-	const handleUserLeaveRoom = (guid: string, socket: Socket): boolean => {
-		socket.leave(guid);
+	const handleUserLeaveRoom = (roomGuid: string, socket: Socket): boolean => {
+		socket.leave(roomGuid);
 
-		const targetRoom = RoomList.find(element => element.guid == guid);
+		const targetRoom = RoomList.find(element => element.guid == roomGuid);
 		const cookie = socket.client.request.headers.cookie;
 
 		if (targetRoom === undefined || cookie === undefined) return false;
@@ -35,12 +35,12 @@ function setupSockets(io: Server) {
 		const game = Games.get(targetRoom);
 		if (game !== undefined && !game.GameFinished) {
 			game.Surrender(player);
-			io.to(guid).emit('NotifyGameFinished', game.Winner?.nickname ?? null);
+			io.to(roomGuid).emit('NotifyGameFinished', game.Winner?.nickname ?? null);
 		}
 
 		//remove player from the list
 		targetRoom.players.splice(targetRoom.players.indexOf(player), 1);
-		io.to(guid).emit('NotifyPlayerLeft', player.guid);
+		io.to(roomGuid).emit('NotifyPlayerLeft', player.guid);
 
 		//close room if last player left
 		if (targetRoom.players.length === 0) {
@@ -53,23 +53,20 @@ function setupSockets(io: Server) {
 
 	io.on('connection', (socket: Socket) => {
 		socket.on('disconnect', () => {
-			console.log('user disconnected');
-	
 			const player = getPlayer(socket);
-	
-			const targetRoom = RoomList.find(element => containsPlayer(element, player));
-	
-			if (targetRoom && socket.client.request.headers.cookie) {
-				const player = getPlayer(socket);
-	
-				const index = targetRoom.players.findIndex(element => element.guid == player.guid);
-				if (index > -1) {
-					targetRoom.players.splice(index, 1);
-					socket.leave(targetRoom.guid);
-					socket.to(targetRoom.guid).emit('NotifyPlayerLeft');
-				}
-			}
-			socket.disconnect();
+
+			const guidsToHandle: string[] = [];
+
+			RoomList.forEach(room => {
+				if (room.players.find(p => p.guid == player.guid) === undefined) return;
+				guidsToHandle.push(room.guid);
+			});
+
+			console.log(guidsToHandle);
+
+			guidsToHandle.forEach(roomGuid => {
+				handleUserLeaveRoom(roomGuid, socket);
+			});
 		});
 
 		socket.on('join', (guid: string) => {
