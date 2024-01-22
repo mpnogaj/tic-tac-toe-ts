@@ -2,6 +2,7 @@ import cookie from 'cookie';
 import { Server, Socket } from 'socket.io';
 
 import Player from '../common/types/dto/player';
+import Room from '../common/types/dto/room';
 import TicTacToe from '../common/types/tictactoe';
 import { Games, RoomList } from './rooms';
 
@@ -15,10 +16,37 @@ function setupSockets(io: Server) {
 	const handleUserLeaveRoom = (guid: string, socket: Socket): boolean => {
 		socket.leave(guid);
 
-		const targetRoom = RoomList.find(element => element.guid == guid);
-		const cookie = socket.client.request.headers.cookie;
+// returns true if room contains a specific player and false otherwise
+function containsPlayer(room: Room, player: Player): boolean {
+	if (room.players.find(p => p == player)) return true;
+	return false;
+}
 
-		if (targetRoom === undefined || cookie === undefined) return false;
+export function handleConn(socket: Socket) {
+	console.log('a user connected');
+
+	socket.on('disconnect', () => {
+		console.log('user disconnected');
+
+		const player = getPlayer(socket);
+
+		const targetRoom = RoomList.find(element => containsPlayer(element, player));
+
+		if (targetRoom && socket.client.request.headers.cookie) {
+			const player = getPlayer(socket);
+
+			const index = targetRoom.players.findIndex(element => element.guid == player.guid);
+			if (index > -1) {
+				targetRoom.players.splice(index, 1);
+				socket.leave(targetRoom.guid);
+				socket.to(targetRoom.guid).emit('NotifyPlayerLeft');
+			}
+		}
+		socket.disconnect();
+	});
+
+	socket.on('join', guid => {
+		console.log('a user joined');
 
 		const player = targetRoom.players.find(x => x.guid == getPlayer(socket).guid);
 
