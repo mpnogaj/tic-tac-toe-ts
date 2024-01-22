@@ -44,7 +44,6 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 		const roomName = this.state.roomName;
 
 		if (roomName === '') return;
-
 		const room: Room = {
 			roomName: roomName,
 			maxPlayerCount: 2,
@@ -55,7 +54,6 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 		try {
 			const resp = await axios.post<Room>(Endpoints.CreateRoom, room);
 			const newRoom = resp.data;
-			console.log(newRoom);
 			this.props.navigate(`/room/${newRoom.guid}`);
 		} catch (err) {
 			alert("Error. Couldn't create room. Check console for details");
@@ -140,6 +138,13 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 					role="dialog"
 					aria-labelledby="createRoomModalLabel"
 					aria-hidden="true"
+					data-bs-backdrop="static"
+					onKeyUp={async event => {
+						if (event.key === 'Enter') {
+							const button = document.getElementById('createRoomBtn')!;
+							button.click();
+						}
+					}}
 				>
 					<div className="modal-dialog" role="document">
 						<div className="modal-content">
@@ -152,9 +157,9 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 								</button>
 							</div>
 							<div className="modal-body">
-								<form>
+								<div>
 									<div className="form-group">
-										<label>Room name: </label>
+										<label className="form-label">Room name: </label>
 										<input
 											className="form-control"
 											type="text"
@@ -164,13 +169,14 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 											}}
 										/>
 									</div>
-								</form>
+								</div>
 							</div>
 							<div className="modal-footer">
 								<button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
 									Close
 								</button>
 								<button
+									id="createRoomBtn"
 									type="button"
 									className="btn btn-primary"
 									data-bs-dismiss="modal"

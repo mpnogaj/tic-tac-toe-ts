@@ -31,7 +31,14 @@ class LoginPage extends NavComponent<empty, ILoginPageState> {
 
 	render(): React.ReactNode {
 		return (
-			<div className="container">
+			<div
+				className="container"
+				onKeyUp={async event => {
+					if (event.key === 'Enter') {
+						await this.playClickedHandler();
+					}
+				}}
+			>
 				<h1>Tic Tac Toe</h1>
 				<div className="form">
 					<div className="form-group">

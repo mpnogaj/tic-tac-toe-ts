@@ -2,7 +2,6 @@ import cookie from 'cookie';
 import { Server, Socket } from 'socket.io';
 
 import Player from '../common/types/dto/player';
-import Room from '../common/types/dto/room';
 import TicTacToe from '../common/types/tictactoe';
 import { Games, RoomList } from './rooms';
 
