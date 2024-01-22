@@ -7,7 +7,7 @@ import * as path from 'path';
 import { Server } from 'socket.io';
 
 import { PORT } from './config';
-import { handleConn } from './socket';
+import setupSockets from './socket';
 
 const publicDir = path.join(__dirname, '../../public');
 const routeDir = path.join(__dirname, 'routes');
@@ -65,11 +65,11 @@ const setupExpressApp = async (app: Express) => {
 	const server = http.createServer(app);
 	const io = new Server(server);
 
+	setupSockets(io);
+
 	server.listen(PORT, () => {
 		console.log(`App listening on port ${PORT}`);
 	});
-
-	io.on('connection', handleConn);
 };
 
 setupExpressApp(express());

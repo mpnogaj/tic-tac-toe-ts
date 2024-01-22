@@ -1,5 +1,5 @@
 import cookie from 'cookie';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 import Player from '../common/types/dto/player';
 import Room from '../common/types/dto/room';
@@ -12,6 +12,9 @@ function getPlayer(socket: Socket): Player {
 	const playerJson = cookie.parse(cookieValue)['Player'].slice(2);
 	return JSON.parse(playerJson);
 }
+function setupSockets(io: Server) {
+	const handleUserLeaveRoom = (guid: string, socket: Socket): boolean => {
+		socket.leave(guid);
 
 // returns true if room contains a specific player and false otherwise
 function containsPlayer(room: Room, player: Player): boolean {
@@ -45,63 +48,96 @@ export function handleConn(socket: Socket) {
 	socket.on('join', guid => {
 		console.log('a user joined');
 
-		const targetRoom = RoomList.find(element => element.guid == guid);
-		if (
-			targetRoom &&
-			targetRoom.players.length < targetRoom.maxPlayerCount &&
-			socket.client.request.headers.cookie
-		) {
-			socket.join(guid);
+		const player = targetRoom.players.find(x => x.guid == getPlayer(socket).guid);
 
-			const player = getPlayer(socket);
+		if (player === undefined) return false;
 
-			if (!targetRoom.players.find(element => element.guid == player.guid)) {
-				targetRoom.players.push(player);
-				socket.to(guid).emit('NotifyPlayerJoined');
-			}
-
-			if (targetRoom.players.length == targetRoom.maxPlayerCount) {
-				socket.to(guid).emit('NotifyGameStarted');
-				Games.set(targetRoom, new TicTacToe());
-			}
-
-			console.log(targetRoom.players);
-		} else socket.disconnect();
-	});
-
-	socket.on('leave', guid => {
-		console.log('a user left');
-
-		const targetRoom = RoomList.find(element => element.guid == guid);
-		if (targetRoom && socket.client.request.headers.cookie) {
-			const player = getPlayer(socket);
-
-			const index = targetRoom.players.findIndex(element => element.guid == player.guid);
-			if (index > -1) {
-				targetRoom.players.splice(index, 1);
-				socket.leave(guid);
-				socket.to(guid).emit('NotifyPlayerLeft');
-			}
-		} else socket.disconnect();
-	});
-
-	socket.on('makeMove', (i, j, guid) => {
-		console.log('user tries to make a move');
-
-		const targetRoom = RoomList.find(element => element.guid == guid);
-		if (targetRoom === undefined) {
-			console.error('Fatal error. Room is undefined. Move ignored');
-			return;
-		}
-
+		//end game if it's already started
 		const game = Games.get(targetRoom);
-		if (game === undefined) {
-			console.error('Fatal error. Game is undefined. Move ignored');
-			return;
+		if (game !== undefined && !game.GameFinished) {
+			game.Surrender(player);
+			io.to(guid).emit('NotifyGameFinished', game.Winner?.nickname ?? null);
 		}
 
-		if (game.MakeMove(i, j, getPlayer(socket))) socket.to(guid).emit('UpdateBoardState');
+		//remove player from the list
+		targetRoom.players.splice(targetRoom.players.indexOf(player), 1);
+		io.to(guid).emit('NotifyPlayerLeft', player.guid);
 
-		if (game.GameFinished) socket.to(guid).emit('NotifyGameFinished');
+		//close room if last player left
+		if (targetRoom.players.length === 0) {
+			RoomList.splice(RoomList.indexOf(targetRoom), 1);
+			Games.delete(targetRoom);
+		}
+
+		return true;
+	};
+
+	io.on('connection', (socket: Socket) => {
+		socket.on('disconnect', () => {
+			//currently missing handler
+			//user should leave the rooms he is in
+			//call surrender for any ongoing games here too
+			//we could store a list of rooms for each user
+			//or append guid to connection query params
+		});
+
+		socket.on('join', (guid: string) => {
+			const cookie = socket.client.request.headers.cookie;
+			const targetRoom = RoomList.find(element => element.guid == guid);
+			if (targetRoom && targetRoom.players.length < targetRoom.maxPlayerCount && cookie) {
+				const player = getPlayer(socket);
+
+				//add socket to room before check because
+				//we want to subscribe to the events
+				//if user join the room in new tab
+				socket.join(guid);
+
+				//user already is in the room
+				if (targetRoom.players.some(x => x.guid === player.guid)) return;
+
+				targetRoom.players.push(player);
+				io.to(guid).emit('NotifyPlayerJoined', player);
+
+				if (targetRoom.players.length == targetRoom.maxPlayerCount) {
+					const game = new TicTacToe();
+					game.StartGame(targetRoom.players[0], targetRoom.players[1]);
+
+					io.to(guid).emit('NotifyGameStarted', game.CurrentTurn);
+					Games.set(targetRoom, game);
+				}
+			} else socket.disconnect();
+		});
+
+		socket.on('leave', guid => {
+			handleUserLeaveRoom(guid, socket);
+		});
+
+		socket.on('makeMove', (i, j, guid) => {
+			const targetRoom = RoomList.find(element => element.guid == guid);
+			if (targetRoom === undefined) {
+				console.error('Fatal error. Room is undefined. Move ignored');
+				return;
+			}
+
+			const game = Games.get(targetRoom);
+			if (game === undefined) {
+				console.error('Fatal error. Game is undefined. Move ignored');
+				return;
+			}
+
+			const player = targetRoom.players.find(x => x.guid === getPlayer(socket).guid);
+
+			if (player === undefined) {
+				console.error('Fatal error. Player is undefined. Move ignored');
+				return;
+			}
+
+			if (game.MakeMove(i, j, player))
+				io.to(guid).emit('UpdateBoardState', game.BoardToString(), game.CurrentTurn);
+
+			if (game.GameFinished) io.to(guid).emit('NotifyGameFinished', game.Winner?.nickname ?? null);
+		});
 	});
 }
+
+export default setupSockets;
