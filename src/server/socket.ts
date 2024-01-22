@@ -12,41 +12,20 @@ function getPlayer(socket: Socket): Player {
 	const playerJson = cookie.parse(cookieValue)['Player'].slice(2);
 	return JSON.parse(playerJson);
 }
-function setupSockets(io: Server) {
-	const handleUserLeaveRoom = (guid: string, socket: Socket): boolean => {
-		socket.leave(guid);
 
-// returns true if room contains a specific player and false otherwise
 function containsPlayer(room: Room, player: Player): boolean {
 	if (room.players.find(p => p == player)) return true;
 	return false;
 }
 
-export function handleConn(socket: Socket) {
-	console.log('a user connected');
+function setupSockets(io: Server) {
+	const handleUserLeaveRoom = (guid: string, socket: Socket): boolean => {
+		socket.leave(guid);
 
-	socket.on('disconnect', () => {
-		console.log('user disconnected');
+		const targetRoom = RoomList.find(element => element.guid == guid);
+		const cookie = socket.client.request.headers.cookie;
 
-		const player = getPlayer(socket);
-
-		const targetRoom = RoomList.find(element => containsPlayer(element, player));
-
-		if (targetRoom && socket.client.request.headers.cookie) {
-			const player = getPlayer(socket);
-
-			const index = targetRoom.players.findIndex(element => element.guid == player.guid);
-			if (index > -1) {
-				targetRoom.players.splice(index, 1);
-				socket.leave(targetRoom.guid);
-				socket.to(targetRoom.guid).emit('NotifyPlayerLeft');
-			}
-		}
-		socket.disconnect();
-	});
-
-	socket.on('join', guid => {
-		console.log('a user joined');
+		if (targetRoom === undefined || cookie === undefined) return false;
 
 		const player = targetRoom.players.find(x => x.guid == getPlayer(socket).guid);
 
@@ -74,11 +53,23 @@ export function handleConn(socket: Socket) {
 
 	io.on('connection', (socket: Socket) => {
 		socket.on('disconnect', () => {
-			//currently missing handler
-			//user should leave the rooms he is in
-			//call surrender for any ongoing games here too
-			//we could store a list of rooms for each user
-			//or append guid to connection query params
+			console.log('user disconnected');
+	
+			const player = getPlayer(socket);
+	
+			const targetRoom = RoomList.find(element => containsPlayer(element, player));
+	
+			if (targetRoom && socket.client.request.headers.cookie) {
+				const player = getPlayer(socket);
+	
+				const index = targetRoom.players.findIndex(element => element.guid == player.guid);
+				if (index > -1) {
+					targetRoom.players.splice(index, 1);
+					socket.leave(targetRoom.guid);
+					socket.to(targetRoom.guid).emit('NotifyPlayerLeft');
+				}
+			}
+			socket.disconnect();
 		});
 
 		socket.on('join', (guid: string) => {
