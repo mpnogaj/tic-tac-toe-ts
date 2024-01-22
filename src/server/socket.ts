@@ -13,11 +13,6 @@ function getPlayer(socket: Socket): Player {
 	return JSON.parse(playerJson);
 }
 
-function containsPlayer(room: Room, player: Player): boolean {
-	if (room.players.find(p => p.guid == player.guid)) return true;
-	return false;
-}
-
 function setupSockets(io: Server) {
 	const handleUserLeaveRoom = (roomGuid: string, socket: Socket): boolean => {
 		socket.leave(roomGuid);
