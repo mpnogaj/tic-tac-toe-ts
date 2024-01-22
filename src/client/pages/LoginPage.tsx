@@ -31,20 +31,27 @@ class LoginPage extends NavComponent<empty, ILoginPageState> {
 
 	render(): React.ReactNode {
 		return (
-			<div>
+			<div className="container">
 				<h1>Tic Tac Toe</h1>
-				<div>
-					<label>Nickname: </label>
-					<input
-						type="text"
-						value={this.state.nickname}
-						onInput={e => {
-							this.setState({ nickname: e.currentTarget.value });
-						}}
-					/>
-				</div>
-				<div>
-					<a onClick={async () => await this.playClickedHandler()}>Play</a>
+				<div className="form">
+					<div className="form-group">
+						<label className="form-label">Nickname: </label>
+						<input
+							className="form-control"
+							type="text"
+							value={this.state.nickname}
+							onInput={e => {
+								this.setState({ nickname: e.currentTarget.value });
+							}}
+						/>
+					</div>
+
+					<button
+						className="btn btn-primary mt-3"
+						onClick={async () => await this.playClickedHandler()}
+					>
+						Play
+					</button>
 				</div>
 			</div>
 		);

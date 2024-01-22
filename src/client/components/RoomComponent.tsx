@@ -9,27 +9,24 @@ type RoomComponentProps = {
 
 const RoomComponent = ({ room, joinRoomCallback }: RoomComponentProps): React.ReactNode => {
 	return (
-		<div style={{ border: '2px solid' }}>
-			<div>
-				<span>{room.guid}</span>
-			</div>
-			<div>
-				<span>{room.roomName}</span>
-			</div>
-			<div>
-				<span>
-					{room.players.length}/{room.maxPlayerCount}
-				</span>
-			</div>
-			<div>
-				<ul>
+		<div className="card mt-4 mb-4">
+			<div className="card-body">
+				<h5 className="card-title">
+					{room.roomName} - {room.players.length}/{room.maxPlayerCount}
+				</h5>
+				<h6 className="card-subtitle mb-2 text-muted">Room code: {room.guid}</h6>
+				<ul className="">
 					{room.players.map(player => {
-						return <li key={player.guid}>{player.nickname}</li>;
+						return (
+							<li className="" key={player.guid}>
+								{player.nickname}
+							</li>
+						);
 					})}
 				</ul>
-			</div>
-			<div>
-				<a onClick={() => joinRoomCallback(room)}>Join</a>
+				<a className="btn btn-primary" onClick={() => joinRoomCallback(room)}>
+					Join
+				</a>
 			</div>
 		</div>
 	);

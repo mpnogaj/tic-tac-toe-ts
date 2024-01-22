@@ -10,6 +10,7 @@ import Endpoints from '../endpoints';
 interface ILoginPageState {
 	isRefreshing: boolean;
 	rooms: Room[];
+	roomName: string;
 }
 
 class RoomsPage extends NavComponent<empty, ILoginPageState> {
@@ -18,7 +19,8 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 
 		this.state = {
 			isRefreshing: false,
-			rooms: []
+			rooms: [],
+			roomName: ''
 		};
 	}
 
@@ -39,9 +41,9 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 	};
 
 	createRoom = async () => {
-		const roomName = prompt('Enter room name');
+		const roomName = this.state.roomName;
 
-		if (roomName === null) return;
+		if (roomName === '') return;
 
 		const room: Room = {
 			roomName: roomName,
@@ -71,43 +73,117 @@ class RoomsPage extends NavComponent<empty, ILoginPageState> {
 		}
 	};
 
+	logoutHandler = async () => {
+		try {
+			await axios.post(Endpoints.Logout);
+			this.props.navigate('/login');
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
 	render(): React.ReactNode {
 		return (
-			<div>
-				<h1>Rooms</h1>
-				<div>
-					{!this.state.isRefreshing ? (
-						<a
-							onClick={() => {
-								this.fetchRooms();
+			<div className="container">
+				<div className="row mt-3">
+					<div className="col">
+						<h1>Tic Tac Toe</h1>
+					</div>
+					<div className="col-auto">
+						<button className="btn btn-primary" onClick={async () => await this.logoutHandler()}>
+							Logout
+						</button>
+					</div>
+				</div>
+
+				<h2>Rooms</h2>
+				<div className="row">
+					<div className="col-auto">
+						<button
+							className="btn btn-primary"
+							data-bs-toggle="modal"
+							data-bs-target="#createRoomModal"
+						>
+							Create room
+						</button>
+					</div>
+					<div className="col-auto">
+						<button
+							disabled={this.state.isRefreshing}
+							className="btn btn-primary"
+							onClick={async () => {
+								await this.fetchRooms();
 							}}
 						>
-							Refresh
-						</a>
-					) : (
-						<span>Refreshing...</span>
-					)}
-					<span> | </span>
-					<a
-						onClick={async () => {
-							await this.createRoom();
-						}}
-					>
-						Create room
-					</a>
+							{this.state.isRefreshing ? 'Refreshing...' : 'Refresh'}
+						</button>
+					</div>
 				</div>
 				<div>
 					{this.state.rooms.map(room => {
 						return (
 							<RoomComponent
 								room={room}
-								joinRoomCallback={room => {
-									this.joinRoom(room.guid);
+								joinRoomCallback={async room => {
+									await this.joinRoom(room.guid);
 								}}
 								key={room.guid}
 							/>
 						);
 					})}
+				</div>
+
+				<div
+					className="modal fade"
+					id="createRoomModal"
+					tabIndex={-1}
+					role="dialog"
+					aria-labelledby="createRoomModalLabel"
+					aria-hidden="true"
+				>
+					<div className="modal-dialog" role="document">
+						<div className="modal-content">
+							<div className="modal-header">
+								<h5 className="modal-title" id="exampleModalLabel">
+									Create room
+								</h5>
+								<button type="button" className="close" data-bs-dismiss="modal" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
+							</div>
+							<div className="modal-body">
+								<form>
+									<div className="form-group">
+										<label>Room name: </label>
+										<input
+											className="form-control"
+											type="text"
+											value={this.state.roomName}
+											onInput={e => {
+												this.setState({ roomName: e.currentTarget.value });
+											}}
+										/>
+									</div>
+								</form>
+							</div>
+							<div className="modal-footer">
+								<button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
+									Close
+								</button>
+								<button
+									type="button"
+									className="btn btn-primary"
+									data-bs-dismiss="modal"
+									disabled={this.state.roomName === ''}
+									onClick={async () => {
+										await this.createRoom();
+									}}
+								>
+									Create room
+								</button>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		);
